@@ -1,50 +1,55 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+## app.R ##
+library(shinydashboard)
+library(DT)
 
-library(shiny)
+# pre-load recipes
+recipes1 <- gs_key("15HBB5cF983vW9hTPaR-eE46gfDv94Qax8gmQxCxmZp0")
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-   
-   # Application title
-   titlePanel("Old Faithful Geyser Data"),
-   
-   # Sidebar with a slider input for number of bins 
-   sidebarLayout(
-      sidebarPanel(
-         sliderInput("bins",
-                     "Number of bins:",
-                     min = 1,
-                     max = 50,
-                     value = 30)
-      ),
+currentRecipe <- recipes1 %>%
+  gs_read(ws = "Spaghetti Carbonara")
+
+ui <- dashboardPage(
+  dashboardHeader(title = "Food Explorer"),
+  dashboardSidebar(),
+  dashboardBody(
+    # Boxes need to be put in a row (or column)
+    fluidRow(
+      h1("Spaghetti Carbonara"),
+      box(width = 4,
+          #DT::dataTableOutput("ingredientTable")
+          tableOutput("ingredientTable")
+          ),
       
-      # Show a plot of the generated distribution
-      mainPanel(
-         plotOutput("distPlot")
+      box(
+        title = "Controls",
+        sliderInput("slider", "Number of observations:", 1, 100, 50),
+        verbatimTextOutput("ingredientList")
       )
-   )
+    )
+  )
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
-   
-   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2] 
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white')
-   })
+  set.seed(122)
+  histdata <- rnorm(500)
+  
+  output$plot1 <- renderPlot({
+    data <- histdata[seq_len(input$slider)]
+    hist(data)
+  })
+  
+  output$ingredientList  <- renderText({
+    paste(currentRecipe)
+  })
+  
+  # output$ingredientTable = DT::renderDataTable({
+  #   currentRecipe
+  # })
+  
+  output$ingredientTable = renderTable({
+    currentRecipe
+  })
+  
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
-
+shinyApp(ui, server)
